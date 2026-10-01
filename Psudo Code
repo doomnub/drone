@@ -1,0 +1,46 @@
+setup():
+    initialize_imu()
+    initialize_radio_input()
+    initialize_virtual_motors()
+
+    calibrate_imu()
+    initialize_pid_controllers()
+
+loop():
+    dt = get_elapsed_time()
+
+    // Read orientation data
+    imu = read_imu()
+
+    // Estimate attitude
+    attitude = estimate_orientation(imu, dt)
+
+    // Read pilot commands
+    throttle = get_throttle()
+    desired_roll = get_roll_command()
+    desired_pitch = get_pitch_command()
+    desired_yaw = get_yaw_command()
+
+    // Calculate control errors
+    roll_error  = desired_roll  - attitude.roll
+    pitch_error = desired_pitch - attitude.pitch
+    yaw_error   = desired_yaw   - attitude.yaw
+
+    // PID controllers
+    roll_output  = roll_pid.update(roll_error, dt)
+    pitch_output = pitch_pid.update(pitch_error, dt)
+    yaw_output   = yaw_pid.update(yaw_error, dt)
+
+    // Quad-X mixer
+    virtual_motor_1 = throttle + roll_output + pitch_output - yaw_output
+    virtual_motor_2 = throttle - roll_output + pitch_output + yaw_output
+    virtual_motor_3 = throttle - roll_output - pitch_output - yaw_output
+    virtual_motor_4 = throttle + roll_output - pitch_output + yaw_output
+
+    // Simulation only
+    simulate_motors(
+        virtual_motor_1,
+        virtual_motor_2,
+        virtual_motor_3,
+        virtual_motor_4
+    )
